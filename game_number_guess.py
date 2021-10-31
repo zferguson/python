@@ -15,17 +15,14 @@ while userGuess != hiddenNumber:
 	if triesLeft > 0:
 		if userGuess > hiddenNumber:
 			triesLeft -= 1
-			#print()
 			print("\nToo high, you have {0} tries left!".format(triesLeft))
 		elif userGuess < hiddenNumber:
 			triesLeft -= 1
-			#print()
 			print("\nToo low, you have {0} tries left!".format(triesLeft))
 		else:
-			#print()
 			print("\nThat's right!")
 	else:
 		print()
-		print("No more tries, sorry! The answer was {0}.".format(hiddenNumber))
+		print("\nNo more tries, sorry! The answer was {0}.".format(hiddenNumber))
 		break
 	
