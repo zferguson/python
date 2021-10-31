@@ -1,4 +1,4 @@
-# Game to guess number between minNum and maxNum
+# game to guess number between minNum and maxNum
 
 # import
 import random as rd
