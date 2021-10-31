@@ -1,9 +1,9 @@
-import random
+import random as rd
 
 minNum = 1
 maxNum = 100
 
-hiddenNumber = random.randint(minNum,maxNum)
+hiddenNumber = rd.randint(minNum,maxNum)
 
 print("Let's play a number guessing game!\n")
 
@@ -12,7 +12,7 @@ triesLeft = int(input("How many guesses would you like? "))
 
 while userGuess != hiddenNumber:
 	userGuess = int(input("\nGuess a number between {0} and {1}: ".format(minNum,maxNum)))
-	if triesLeft > 1:
+	if triesLeft > 0:
 		if userGuess > hiddenNumber:
 			triesLeft -= 1
 			#print()
