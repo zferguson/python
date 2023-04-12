@@ -33,4 +33,4 @@ for combination in combinations:
         #for i, weight in enumerate(weights):
         #    asset_return = asset_returns[i]
         #    weighted_return += weight / 100 * asset_return
-    print(f"Combination {combination}: Overall Weighted Return: {weighted_return:.2f}")
+    print(f"Combination {combination}: Overall Weighted Return: {weighted_return:.3f}")
