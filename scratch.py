@@ -3,7 +3,7 @@ import random
 
 # Generate all combinations of numbers from 2 to 7
 numbers = [2, 3, 4, 5, 6, 7]
-combinations = list(itertools.combinations(numbers, 3))
+combinations = list(itertools.product(numbers, repeat = len(numbers))
 
 # Map each number to a list of 5 portfolio weights of random value between 0 and 100
 portfolio_weights = {}
