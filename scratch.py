@@ -1,36 +1,56 @@
-import itertools
-import random
+import pandas as pd
+from sklearn.linear_model import ElasticNetCV
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.decomposition import PCA
 
-# Generate all combinations of numbers from 2 to 7
-num_accts = 4
-acct_pct = [0.4, 0.3, 0.2, 0.1]
-numbers = [2, 3, 4, 5, 6, 7]
-num_portfolios = len(numbers)
+# Load your dataset
+data = pd.read_csv('your_dataset.csv')
 
-combinations = list(itertools.product(numbers, repeat = num_accts))
+# Separate features and target variable
+X = data.drop('target', axis=1)
+y = data['target']
 
-# Map each number to a list of 5 portfolio weights of random value between 0 and 100
-portfolio_weights = {}
-for num in numbers:
-    rand_list = [random.randint(0, 100) for _ in range(22)]
-    weights = [i / sum(rand_list) for i in rand_list]
-    portfolio_weights[num] = weights
+# Perform one-hot encoding on categorical features
+categorical_features = ['feature1', 'feature2']  # Add your categorical feature names here
+X_encoded = pd.get_dummies(X, columns=categorical_features)
 
-# Map each asset class to a return of a random number between 1 and 10
-asset_returns = {}
-for num in numbers:
-    rand_list = [random.randint(1, 23) for _ in range(22)]
-    returns = [i / 100 for i in rand_list]
-    asset_returns[num] = returns
+# Scale the numerical features
+numerical_features = ['numerical1', 'numerical2']  # Add your numerical feature names here
+scaler = StandardScaler()
+X_encoded[numerical_features] = scaler.fit_transform(X_encoded[numerical_features])
 
-# Calculate the overall weighted return for each combination of numbers
-for combination in combinations:
-    weighted_return = 0
-    for i, num in enumerate(combination):
-        weights = portfolio_weights[num]
-        returns = asset_returns[num]
-        weighted_return += acct_pct[i] * sum([w * r for w, r in zip(weights, returns)])
-        #for i, weight in enumerate(weights):
-        #    asset_return = asset_returns[i]
-        #    weighted_return += weight / 100 * asset_return
-    print(f"Combination {combination}: Overall Weighted Return: {weighted_return:.3f}")
+# Reduce dimensionality using PCA
+pca = PCA(n_components=0.95)  # Adjust the desired explained variance ratio as needed
+X_reduced = pca.fit_transform(X_encoded)
+
+# Split the dataset into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X_reduced, y, test_size=0.2, random_state=42)
+
+# Create ElasticNetCV model
+model = ElasticNetCV(l1_ratio=[.1, .5, .7, .9, .95, .99, 1], cv=5)
+
+# Fit the model
+model.fit(X_train, y_train)
+
+# Evaluate the model
+accuracy = model.score(X_test, y_test)
+print(f"Accuracy: {accuracy}")
+
+# Perform nested cross-validation to find best lambda and L1 ratio
+param_grid = {'alpha': [0.001, 0.01, 0.1, 1.0, 10.0], 'l1_ratio': [0.1, 0.3, 0.5, 0.7, 0.9]}  # Adjust the range of lambda and L1 ratio values as needed
+nested_cv = GridSearchCV(model, param_grid, cv=5)
+nested_cv.fit(X_reduced, y)
+
+best_lambda = nested_cv.best_params_['alpha']
+best_l1_ratio = nested_cv.best_params_['l1_ratio']
+print(f"Best lambda value: {best_lambda}")
+print(f"Best L1 ratio: {best_l1_ratio}")
+
+# Refit the model with the best lambda and L1 ratio
+best_model = ElasticNetCV(l1_ratio=[best_l1_ratio], cv=5, alpha=best_lambda)
+best_model.fit(X_train, y_train)
+
+# Evaluate the best model
+best_accuracy = best_model.score(X_test, y_test)
+print(f"Accuracy with best lambda and L1 ratio: {best_accuracy}")
