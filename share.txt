@@ -83,3 +83,62 @@ Attachments:
 	•	Preliminary Risk Assessment
 
 This document can serve as your guide to pitch the idea effectively. Tailor the details (dates, budget numbers, team assignments) to your specific environment to ensure it meets your firm’s standards and strategic objectives.
+
+
+CHANGE CONTROL PROCESS NOTES
+
+A good change control process for an analytics and reporting team should balance agility and risk mitigation, ensuring accurate, reliable, and well-documented changes while minimizing disruptions. Here’s a structured approach:
+
+1. Define Change Categories
+
+Not all changes carry the same risk. Categorizing changes helps determine the level of control needed:
+	•	Low-Risk Changes: Formatting updates, minor visual tweaks, non-business-critical changes.
+	•	Medium-Risk Changes: Query optimizations, data source updates, dashboard enhancements.
+	•	High-Risk Changes: Changes to financial metrics, KPI definitions, underlying data models, or major process automations.
+
+Each category should have different approval and testing requirements.
+
+2. Establish a Change Request Process
+
+Create a formal way to submit changes:
+	•	Who can request a change? (Analysts, stakeholders, IT, etc.)
+	•	What details are needed? (Change description, business impact, urgency)
+	•	Where is it logged? (JIRA, ServiceNow, SharePoint, or a simple shared tracker)
+
+For high-impact reports, require a business owner’s approval before moving forward.
+
+3. Implement a Review & Approval Workflow
+	•	Peer Review: Another analyst or developer should review the logic and impact before approval.
+	•	Team Lead or Manager Review: Ensure alignment with business goals and minimize risk.
+	•	Stakeholder Review (if applicable): For high-risk changes, business stakeholders should validate expected outcomes.
+
+4. Develop a Testing Strategy
+	•	Unit Testing: Check query logic, calculations, and transformations.
+	•	Regression Testing: Compare results before and after changes to ensure no unintended consequences.
+	•	UAT (User Acceptance Testing): Business users validate critical reports before deployment.
+
+5. Version Control & Documentation
+	•	Use Git (if technical) or a file-naming convention for reports (e.g., Sales_Report_v1.3).
+	•	Document changes in a Change Log (what changed, why, who approved, and when).
+	•	Maintain a Data Dictionary to track modifications in KPI definitions.
+
+6. Deploy Changes Strategically
+	•	Scheduled Deployments: Major changes should go live at non-peak hours.
+	•	Rollback Plan: Keep backups of old reports/models for quick restoration.
+	•	Stakeholder Communication: Notify users about significant updates in advance.
+
+7. Monitor & Iterate
+	•	Track issues post-deployment.
+	•	Collect feedback from users.
+	•	Hold retrospective reviews for major incidents to improve the process.
+
+Summary
+	1.	Categorize changes by risk level.
+	2.	Log change requests formally.
+	3.	Review & approve changes systematically.
+	4.	Test thoroughly before deployment.
+	5.	Document everything for accountability.
+	6.	Deploy strategically with rollback plans.
+	7.	Monitor & improve continuously.
+
+This process ensures accuracy, accountability, and stability in analytics/reporting changes while allowing agility where needed. Would you like a template or workflow diagram for implementation?
