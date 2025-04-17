@@ -2,10 +2,11 @@ import win32com.client
 import re
 import csv
 import os
+from datetime import datetime, timedelta
 
 def extract_email_and_name(body):
     """
-    Extracts recipient name and email address from undeliverable message body.
+    Extract recipient name and email from the body of an undeliverable message.
     """
     match = re.search(r'to\s+(.+?)\s+<(.+?)>', body, re.IGNORECASE)
     if match:
@@ -18,15 +19,18 @@ def extract_email_and_name(body):
 
     return None, None
 
-def get_undeliverable_recipients():
+def get_undeliverable_recipients_since_yesterday():
     outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
     inbox = outlook.GetDefaultFolder(6)
-    messages = inbox.Items
-    messages.Sort("[ReceivedTime]", True)
+
+    # Format the date for Restrict (Outlook expects: 'mm/dd/yyyy hh:mm AM/PM')
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y %H:%M %p")
+    filtered_items = inbox.Items.Restrict(f"[ReceivedTime] >= '{yesterday}'")
+    filtered_items.Sort("[ReceivedTime]", True)
 
     recipients = []
 
-    for message in messages:
+    for message in filtered_items:
         try:
             if "undeliverable" in message.Subject.lower():
                 name, email = extract_email_and_name(message.Body)
@@ -51,5 +55,5 @@ def export_to_csv(data, filename="undeliverable_recipients.csv"):
     print(f"Exported {len(data)} entries to '{filepath}'")
 
 if __name__ == "__main__":
-    failed_recipients = get_undeliverable_recipients()
+    failed_recipients = get_undeliverable_recipients_since_yesterday()
     export_to_csv(failed_recipients)
