@@ -1,59 +1,77 @@
 import win32com.client
 import re
-import csv
 import os
 from datetime import datetime, timedelta
+import pandas as pd
 
-def extract_email_and_name(body):
+def extract_from_embedded_msg(message):
     """
-    Extract recipient name and email from the body of an undeliverable message.
+    Try to extract 'From' and 'To' from embedded message in the undeliverable notice.
     """
-    match = re.search(r'to\s+(.+?)\s+<(.+?)>', body, re.IGNORECASE)
+    for attachment in message.Attachments:
+        if attachment.Type == 6:  # olEmbeddeditem
+            try:
+                embedded = attachment.EmbeddedMsg
+                sender = embedded.SenderEmailAddress or embedded.SenderName
+                recipients = [r.Address for r in embedded.Recipients]
+                return [(sender, r) for r in recipients if r]
+            except Exception:
+                continue
+    return []
+
+def extract_from_body(body):
+    """
+    Fallback to regex-based extraction if no embedded message exists.
+    """
+    # Try to extract both name and email from lines like: "Your message to John Doe <john@example.com>"
+    match = re.search(r'to\s+.*?<([\w\.-]+@[\w\.-]+)>', body, re.IGNORECASE)
     if match:
-        name, email = match.groups()
-        return name.strip(), email.strip()
-
+        return [("Unknown", match.group(1).strip())]
+    
+    # Fallback: just extract one email address
     match = re.search(r'[\w\.-]+@[\w\.-]+', body)
     if match:
-        return None, match.group().strip()
+        return [("Unknown", match.group().strip())]
+    
+    return []
 
-    return None, None
-
-def get_undeliverable_recipients_since_yesterday():
+def get_failed_deliveries_since_yesterday():
     outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
     inbox = outlook.GetDefaultFolder(6)
+    messages = inbox.Items
+    messages.Sort("[ReceivedTime]", True)
 
-    # Format the date for Restrict (Outlook expects: 'mm/dd/yyyy hh:mm AM/PM')
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%m/%d/%Y %H:%M %p")
-    filtered_items = inbox.Items.Restrict(f"[ReceivedTime] >= '{yesterday}'")
-    filtered_items.Sort("[ReceivedTime]", True)
+    cutoff = datetime.now() - timedelta(days=1)
+    failed_pairs = set()
 
-    recipients = []
-
-    for message in filtered_items:
+    for msg in messages:
         try:
-            if "undeliverable" in message.Subject.lower():
-                name, email = extract_email_and_name(message.Body)
-                if email:
-                    recipients.append({
-                        "Name": name if name else "Unknown",
-                        "Email": email
-                    })
-        except AttributeError:
+            received_time = msg.ReceivedTime
+            if hasattr(received_time, "tzinfo") and received_time.tzinfo is not None:
+                received_time = received_time.replace(tzinfo=None)
+
+            if received_time < cutoff:
+                break  # Inbox is sorted descending
+
+            subject = msg.Subject.lower()
+            if "undeliverable" in subject or "delivery" in subject:
+                extracted = extract_from_embedded_msg(msg)
+                if not extracted:
+                    extracted = extract_from_body(msg.Body or msg.HTMLBody or "")
+
+                for from_email, to_email in extracted:
+                    failed_pairs.add((from_email.lower(), to_email.lower()))
+        except Exception:
             continue
 
-    return recipients
+    return sorted(failed_pairs)
 
-def export_to_csv(data, filename="undeliverable_recipients.csv"):
-    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-    filepath = os.path.join(desktop, filename)
-    with open(filepath, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.DictWriter(file, fieldnames=["Name", "Email"])
-        writer.writeheader()
-        for row in data:
-            writer.writerow(row)
-    print(f"Exported {len(data)} entries to '{filepath}'")
+def export_failed_emails_to_csv(pairs, filename="undeliverable_recipients.csv"):
+    df = pd.DataFrame(pairs, columns=["From", "To"])
+    desktop = os.path.join(os.path.expanduser("~"), "Desktop", filename)
+    df.to_csv(desktop, index=False)
+    print(f"Exported {len(df)} unique failure pairs to {desktop}")
 
 if __name__ == "__main__":
-    failed_recipients = get_undeliverable_recipients_since_yesterday()
-    export_to_csv(failed_recipients)
+    failures = get_failed_deliveries_since_yesterday()
+    export_failed_emails_to_csv(failures)
